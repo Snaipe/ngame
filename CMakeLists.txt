@@ -2,6 +2,8 @@ project (game CXX)
 
 set (SOURCES
   src/main.cc
+  src/metaball.cc
+  src/metaball.h
 )
 
 add_executable (game ${SOURCES})

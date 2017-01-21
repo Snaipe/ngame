@@ -7,6 +7,8 @@
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_video.h>
 
+#include "metaball.h"
+
 struct engine {
     engine();
     ~engine();
@@ -16,11 +18,14 @@ struct engine {
 
     SDL_Window *window;
     SDL_Renderer *renderer;
+
+    metaballs mb;
 };
 
 class quit {};
 
 engine::engine()
+    : mb(2, 0.00004)
 {
     window = SDL_CreateWindow("Game",
             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -38,6 +43,8 @@ engine::~engine()
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 }
+
+std::deque<std::complex<double>> lastpos;
 
 void engine::tick(double dt)
 {
@@ -59,6 +66,19 @@ void engine::tick(double dt)
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    std::complex<double> pos = x + y * 1i;
+    lastpos.push_back(pos);
+
+    mb.getballs()[1].real(pos.real());
+    mb.getballs()[1].imag(pos.imag());
+    mb.getballs()[0].real(lastpos.front().real());
+    mb.getballs()[0].imag(lastpos.front().imag());
+    lastpos.pop_front();
+
+    mb.draw(renderer);
+
     SDL_RenderPresent(renderer);
 }
 
@@ -66,6 +86,18 @@ void engine::start()
 {
     int framerate = 60;
     Uint64 last  = SDL_GetPerformanceCounter();
+
+    mb.add_ball(metaball(0, 2));
+    mb.add_ball(metaball(0, 1));
+
+    SDL_PumpEvents();
+
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    std::complex<double> pos = x + y * 1i;
+
+    for (size_t i = 0; i < framerate / 10; ++i)
+        lastpos.push_back(pos);
 
     for (;;) {
         Uint64 freq = SDL_GetPerformanceFrequency();
