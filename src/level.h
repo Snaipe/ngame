@@ -8,15 +8,14 @@
 
 #include <SDL2/SDL_render.h>
 
+#include "ai.h"
 #include "drawable.h"
 #include "metaball.h"
 #include "tickable.h"
 
-struct ai_state;
-
 struct entity_attr {
     constexpr entity_attr()
-        : speed(1500)
+        : speed(1000)
     {}
 
     double speed;
@@ -38,10 +37,10 @@ public:
     std::complex<double> velocity;
     std::complex<double> goal;
     entity_attr attr;
+    state_machine ai;
 
 private:
     std::queue<std::complex<double>> lastpos;
-    ai_state *curstate;
     struct metaballs mb;
 };
 

@@ -23,9 +23,9 @@ void metaballs::recompute_size()
 }
 
 metaballs::metaballs(double visc, double thresh)
-    : viscosity(visc)
+    : balls()
+    , viscosity(visc)
     , threshold(thresh)
-    , balls()
 {
     recompute_size();
 }

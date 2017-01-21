@@ -16,6 +16,10 @@ set (SOURCES
   src/tickable.h
 )
 
+if (NOT WIN32)
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter")
+endif ()
+
 add_executable (game ${SOURCES})
 
 target_link_libraries(game SDL2 SDL2_image)

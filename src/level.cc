@@ -5,18 +5,18 @@
 #include "level.h"
 
 entity::entity(std::complex<double> pos)
-    : mb(2, 0.00004, metaball(pos, 2), metaball(pos, 1.5))
+    : ai()
+    , mb(2, 0.00004, metaball(pos, 2), metaball(pos, 1.5))
 {
     for (size_t i = 0; i < 2 / engine::get().framerate; ++i)
         lastpos.push(pos);
 
-    curstate = &ai_state::GOTO;
-    curstate->enter(*this);
+    ai.push(*this, ai_state::FIND_FOOD);
 }
 
 void entity::tick(double dt)
 {
-    curstate->tick(*this, dt);
+    ai.tick(*this, dt);
 
     std::complex<double> p = pos();
 
@@ -45,8 +45,8 @@ void entity::draw(SDL_Renderer *renderer)
 }
 
 bgelement::bgelement(SDL_Texture *tex_, std::complex<double> pos_)
-    : tex(tex_)
-    , pos(pos_)
+    : pos(pos_)
+    , tex(tex_)
 {}
 
 void bgelement::draw(SDL_Renderer *renderer)

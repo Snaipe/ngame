@@ -95,9 +95,12 @@ void engine::start()
 
     camera.zoom = 0.1;
 
-    entity e = entity(300 + 400i);
-    e.velocity = (1 + 1i) * 1000;
-    level.add_entity(e);
+    level.add_entity(entity((300 + 400i) / camera.zoom));
+    level.add_entity(entity((400 + 500i) / camera.zoom));
+    level.add_entity(entity((200 + 200i) / camera.zoom));
+    level.add_entity(entity((100 + 100i) / camera.zoom));
+    level.add_entity(entity((500 + 600i) / camera.zoom));
+    level.add_entity(entity((600 + 500i) / camera.zoom));
 
     SDL_RaiseWindow(window);
 

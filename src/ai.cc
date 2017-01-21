@@ -9,6 +9,7 @@
 idle ai_state::IDLE;
 wander ai_state::WANDER;
 go_to ai_state::GOTO;
+find_food ai_state::FIND_FOOD;
 
 void ai_state::enter(entity &target)
 {
@@ -16,6 +17,32 @@ void ai_state::enter(entity &target)
 
 void ai_state::exit(entity &target)
 {
+}
+
+void state_machine::push(entity &ent, ai_state &state)
+{
+    state.enter(ent);
+    states.push(&state);
+}
+
+void state_machine::set(entity &ent, ai_state &state)
+{
+    if (!states.empty())
+        pop(ent);
+    push(ent, state);
+}
+
+void state_machine::pop(entity &ent)
+{
+    ai_state *top = states.top();
+    states.pop();
+    top->exit(ent);
+}
+
+void state_machine::tick(entity &ent, double dt)
+{
+    ai_state *top = states.empty() ? &ai_state::IDLE : states.top();
+    top->tick(ent, dt);
 }
 
 void idle::tick(entity &target, double dt)
@@ -56,18 +83,9 @@ void wander::tick(entity &target, double dt)
 
 void go_to::tick(entity &target, double dt)
 {
-#ifndef NDEBUG
-    if (engine::debug) {
-        SDL_Point p;
-        SDL_GetMouseState(&p.x, &p.y);
-        target.goal = engine::get().camera.pixel_to_coord(p);
-        SDL_SetRenderDrawColor(engine::get().renderer, 0, 255, 255, 255);
-        SDL_RenderDrawPoint(engine::get().renderer, p.x, p.y);
-    }
-#endif
-
     if (std::abs(target.goal - target.pos()) < GOTO_THRESH) {
         target.velocity /= 2;
+        target.ai.pop(target);
         return;
     }
 
@@ -93,4 +111,15 @@ void go_to::tick(entity &target, double dt)
     double theta = std::min(std::max(diffth, GOTO_MIN_TH), GOTO_MAX_TH);
 
     target.velocity = target.attr.speed * std::exp(std::complex<double>(1i) * (origth - theta + pi / 2.));
+}
+
+void find_food::tick(entity &target, double dt)
+{
+    std::random_device rand;
+    std::mt19937 mt(rand());
+    std::uniform_real_distribution<double> dist(0, 5000);
+
+    target.goal = std::complex<double>(dist(mt), dist(mt));
+
+    target.ai.push(target, ai_state::GOTO);
 }
