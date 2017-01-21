@@ -1,6 +1,7 @@
 #ifndef METABALL_H_
 #define METABALL_H_
 
+#include <array>
 #include <complex>
 #include <vector>
 
@@ -19,8 +20,20 @@ class metaballs {
 public:
     metaballs(double visc, double thresh);
 
+    template <typename ...Args>
+    metaballs(double visc, double thresh, Args ...args)
+        : metaballs(visc, thresh)
+    {
+        std::array<metaball, sizeof...(Args)> balls = {args...};
+
+        for (auto &ball : balls) {
+            add_ball(ball);
+        }
+        recompute_size();
+    }
+
     void draw(SDL_Renderer *renderer);
-    void add_ball(metaball &&mb);
+    void add_ball(metaball mb);
     std::vector<metaball> &getballs();
 private:
     std::complex<double> tangent(const std::complex<double> &pos);

@@ -7,25 +7,19 @@
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_video.h>
 
+#include "engine.h"
 #include "metaball.h"
-
-struct engine {
-    engine();
-    ~engine();
-
-    void tick(double dt);
-    void start();
-
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-
-    metaballs mb;
-};
 
 class quit {};
 
+static engine *singleton;
+
+engine &engine::get() {
+    return *singleton;
+}
+
 engine::engine()
-    : mb(2, 0.00004)
+    : framerate(60)
 {
     window = SDL_CreateWindow("Game",
             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -34,8 +28,10 @@ engine::engine()
         throw std::invalid_argument(SDL_GetError());
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (renderer == nullptr)
+    if (renderer == nullptr) {
+        SDL_DestroyWindow(window);
         throw std::invalid_argument(SDL_GetError());
+    }
 }
 
 engine::~engine()
@@ -44,18 +40,27 @@ engine::~engine()
     SDL_DestroyWindow(window);
 }
 
-std::deque<std::complex<double>> lastpos;
-
 void engine::tick(double dt)
 {
-    std::cout << dt << std::endl;
     SDL_Event ev;
     while (SDL_PollEvent(&ev)) {
         std::cout << ev.type << std::endl;
         switch (ev.type) {
+            case SDL_MOUSEWHEEL:
+                if (ev.wheel.y > 0)
+                    camera.zoom *= 1.1;
+                else if (ev.wheel.y < 0)
+                    camera.zoom /= 1.1;
+                break;
             case SDL_KEYDOWN:
                 if (ev.key.keysym.sym == SDLK_ESCAPE)
                     throw quit();
+                break;
+            case SDL_WINDOWEVENT:
+                if (ev.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    screen_width  = ev.window.data1;
+                    screen_height = ev.window.data2;
+                }
                 break;
             case SDL_QUIT:
                 throw quit();
@@ -63,41 +68,38 @@ void engine::tick(double dt)
         }
     }
 
+    level.tick(dt);
+
+    SDL_Texture *out = SDL_CreateTexture(renderer, 0,
+            SDL_TEXTUREACCESS_TARGET, screen_width, screen_height);
+    SDL_SetRenderTarget(renderer, out);
+    SDL_RenderSetLogicalSize(renderer, screen_width, screen_height);
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    int x, y;
-    SDL_GetMouseState(&x, &y);
-    std::complex<double> pos = x + y * 1i;
-    lastpos.push_back(pos);
+    level.draw(renderer);
 
-    mb.getballs()[1].real(pos.real());
-    mb.getballs()[1].imag(pos.imag());
-    mb.getballs()[0].real(lastpos.front().real());
-    mb.getballs()[0].imag(lastpos.front().imag());
-    lastpos.pop_front();
-
-    mb.draw(renderer);
+    SDL_SetRenderTarget(renderer, NULL);
+    SDL_RenderCopy(renderer, out, NULL, NULL);
 
     SDL_RenderPresent(renderer);
+    SDL_DestroyTexture(out);
 }
 
 void engine::start()
 {
-    int framerate = 60;
+    using namespace std::complex_literals;
+
+    camera.zoom = 0.1;
+
+    entity e = entity(300 + 400i);
+    e.velocity = (1 + 1i) * 1000;
+    level.add_entity(e);
+
+    SDL_RaiseWindow(window);
+
     Uint64 last  = SDL_GetPerformanceCounter();
-
-    mb.add_ball(metaball(0, 2));
-    mb.add_ball(metaball(0, 1));
-
-    SDL_PumpEvents();
-
-    int x, y;
-    SDL_GetMouseState(&x, &y);
-    std::complex<double> pos = x + y * 1i;
-
-    for (size_t i = 0; i < framerate / 10; ++i)
-        lastpos.push_back(pos);
 
     for (;;) {
         Uint64 freq = SDL_GetPerformanceFrequency();
@@ -120,6 +122,7 @@ int main(int argc, char *argv[])
 
     try {
         engine e;
+        singleton = &e;
 
         e.start();
     } catch (quit &q) {

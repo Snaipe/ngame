@@ -4,6 +4,7 @@
 #include <tuple>
 #include <limits>
 #include "metaball.h"
+#include "engine.h"
 
 #define DRAW_THRESH 250
 #define DRAW_LOWER_THRESH 3
@@ -28,7 +29,7 @@ metaballs::metaballs(double visc, double thresh)
     recompute_size();
 }
 
-void metaballs::add_ball(metaball &&mb)
+void metaballs::add_ball(metaball mb)
 {
     balls.push_back(mb);
     recompute_size();
@@ -41,7 +42,8 @@ std::complex<double> metaballs::find_border(SDL_Renderer *renderer, std::complex
     while (force > threshold) {
         force = correct_edge(pos);
         SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-        SDL_RenderDrawPoint(renderer, pos.real(), pos.imag());
+        SDL_Point p = engine::get().camera.coord_to_pixel(pos);
+        SDL_RenderDrawPoint(renderer, p.x, p.y);
     }
     return pos;
 }
@@ -96,7 +98,8 @@ void metaballs::draw(SDL_Renderer *renderer)
         ctx.push_back({ edge, edge, ball, false });
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_RenderDrawPoint(renderer, ball.real(), ball.imag());
+        SDL_Point p = engine::get().camera.coord_to_pixel(ball);
+        SDL_RenderDrawPoint(renderer, p.x, p.y);
     }
 
     double step = 30;
@@ -111,8 +114,10 @@ void metaballs::draw(SDL_Renderer *renderer)
             correct_edge(ballctx.edgep);
 
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-            SDL_RenderDrawLine(renderer, prev.real(), prev.imag(),
-                    ballctx.edgep.real(), ballctx.edgep.imag());
+
+            SDL_Point pprev = engine::get().camera.coord_to_pixel(prev);
+            SDL_Point pnext = engine::get().camera.coord_to_pixel(ballctx.edgep);
+            SDL_RenderDrawLine(renderer, pprev.x, pprev.y, pnext.x, pnext.y);
 
             // mark balls done when gone full circle
             for (auto &octx : ctx) {
