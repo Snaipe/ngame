@@ -19,7 +19,7 @@ engine &engine::get() {
 }
 
 engine::engine()
-    : framerate(60)
+    : framerate(1./60.)
 {
     window = SDL_CreateWindow("Game",
             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -40,11 +40,14 @@ engine::~engine()
     SDL_DestroyWindow(window);
 }
 
+#ifndef NDEBUG
+bool engine::debug = true;
+#endif
+
 void engine::tick(double dt)
 {
     SDL_Event ev;
     while (SDL_PollEvent(&ev)) {
-        std::cout << ev.type << std::endl;
         switch (ev.type) {
             case SDL_MOUSEWHEEL:
                 if (ev.wheel.y > 0)
@@ -68,8 +71,6 @@ void engine::tick(double dt)
         }
     }
 
-    level.tick(dt);
-
     SDL_Texture *out = SDL_CreateTexture(renderer, 0,
             SDL_TEXTUREACCESS_TARGET, screen_width, screen_height);
     SDL_SetRenderTarget(renderer, out);
@@ -78,6 +79,7 @@ void engine::tick(double dt)
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
+    level.tick(dt);
     level.draw(renderer);
 
     SDL_SetRenderTarget(renderer, NULL);

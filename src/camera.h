@@ -22,6 +22,7 @@ public:
     double y();
 
     SDL_Point coord_to_pixel(const std::complex<double> &pos);
+    std::complex<double> pixel_to_coord(const SDL_Point &pos);
 
     void set(const std::complex<double> &pos);
     void tick(double dt);

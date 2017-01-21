@@ -20,6 +20,10 @@ struct engine {
     SDL_Window *window;
     SDL_Renderer *renderer;
 
+#ifndef NDEBUG
+    static bool debug;
+#endif
+
 private:
     void tick(double dt);
     void start();

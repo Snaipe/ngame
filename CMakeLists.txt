@@ -1,6 +1,8 @@
 project (game CXX)
 
 set (SOURCES
+  src/ai.cc
+  src/ai.h
   src/camera.cc
   src/camera.h
   src/drawable.h

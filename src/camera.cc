@@ -30,5 +30,10 @@ double camera::y()
 
 SDL_Point camera::coord_to_pixel(const std::complex<double> &pos)
 {
-    return { int(pos.real() * zoom), int(pos.imag() * zoom) };
+    return { int((pos.real() - x_) * zoom), int((pos.imag() - y_) * zoom) };
+}
+
+std::complex<double> camera::pixel_to_coord(const SDL_Point &pos)
+{
+    return std::complex<double>((pos.x + x_) / zoom, (pos.y + y_) / zoom);
 }

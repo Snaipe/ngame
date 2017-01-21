@@ -1,30 +1,42 @@
 #include <iostream>
-#include "level.h"
+
+#include "ai.h"
 #include "engine.h"
+#include "level.h"
 
 entity::entity(std::complex<double> pos)
-    : mb(2, 0.00004, metaball(pos, 2), metaball(pos, 1.5)), pos(mb.getballs()[0])
+    : mb(2, 0.00004, metaball(pos, 2), metaball(pos, 1.5))
 {
-    for (size_t i = 0; i < engine::get().framerate / 10; ++i)
+    for (size_t i = 0; i < 2 / engine::get().framerate; ++i)
         lastpos.push(pos);
+
+    curstate = &ai_state::GOTO;
+    curstate->enter(*this);
 }
 
 void entity::tick(double dt)
 {
-    std::complex<double> pos = mb.getballs()[0];
+    curstate->tick(*this, dt);
+
+    std::complex<double> p = pos();
 
     // dp / dt = v -> p(n+1) - p(n) = v * dt
-    pos += velocity * dt;
+    p += velocity * dt;
 
-    mb.getballs()[0].real(pos.real());
-    mb.getballs()[0].imag(pos.imag());
+    mb.getballs()[0].real(p.real());
+    mb.getballs()[0].imag(p.imag());
 
-    lastpos.push(pos);
+    lastpos.push(p);
 
-    pos = lastpos.front();
-    mb.getballs()[1].real(pos.real());
-    mb.getballs()[1].imag(pos.imag());
+    p = lastpos.front();
+    mb.getballs()[1].real(p.real());
+    mb.getballs()[1].imag(p.imag());
     lastpos.pop();
+}
+
+std::complex<double> entity::pos()
+{
+    return mb.getballs()[0];
 }
 
 void entity::draw(SDL_Renderer *renderer)
