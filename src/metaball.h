@@ -39,7 +39,7 @@ private:
     std::complex<double> tangent(const std::complex<double> &pos);
     std::complex<double> normal(const std::complex<double> &pos);
     double correct_edge(std::complex<double> &pos);
-    std::complex<double> find_border(SDL_Renderer *renderer, std::complex<double> pos);
+    std::complex<double> find_border(std::complex<double> pos);
     void recompute_size();
 
     std::vector<metaball> balls;

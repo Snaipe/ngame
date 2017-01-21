@@ -35,15 +35,20 @@ void metaballs::add_ball(metaball mb)
     recompute_size();
 }
 
-std::complex<double> metaballs::find_border(SDL_Renderer *renderer, std::complex<double> pos)
+std::complex<double> metaballs::find_border(std::complex<double> pos)
 {
     double force = std::numeric_limits<double>::max();
 
     while (force > threshold) {
         force = correct_edge(pos);
-        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-        SDL_Point p = engine::get().camera.coord_to_pixel(pos);
-        SDL_RenderDrawPoint(renderer, p.x, p.y);
+
+#ifndef NDEBUG
+        if (engine::debug) {
+            SDL_SetRenderDrawColor(engine::get().renderer, 255, 255, 0, 255);
+            SDL_Point p = engine::get().camera.coord_to_pixel(pos);
+            SDL_RenderDrawPoint(engine::get().renderer, p.x, p.y);
+        }
+#endif
     }
     return pos;
 }
@@ -94,12 +99,16 @@ void metaballs::draw(SDL_Renderer *renderer)
     std::complex<double> one = 1i;
     std::vector<ballcontext> ctx;
     for (auto &ball : balls) {
-        std::complex<double> edge = find_border(renderer, ball + one);
+        std::complex<double> edge = find_border(ball + one);
         ctx.push_back({ edge, edge, ball, false });
 
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_Point p = engine::get().camera.coord_to_pixel(ball);
-        SDL_RenderDrawPoint(renderer, p.x, p.y);
+#ifndef NDEBUG
+        if (engine::debug) {
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            SDL_Point p = engine::get().camera.coord_to_pixel(ball);
+            SDL_RenderDrawPoint(renderer, p.x, p.y);
+        }
+#endif
     }
 
     double step = 30;
