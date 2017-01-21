@@ -7,6 +7,7 @@
 #include "engine.h"
 
 #define DRAW_THRESH 250
+#define DRAW_STEPS 20
 #define DRAW_LOWER_THRESH 3
 #define CORRECT_LARGE 100000
 #define STEP_DELTA 0.1
@@ -111,7 +112,7 @@ void metaballs::draw(SDL_Renderer *renderer)
 #endif
     }
 
-    double step = 30;
+    double step = DRAW_STEPS;
     for (size_t until = 0; until < DRAW_THRESH; ++until) {
         for (auto &ballctx : ctx) {
             if (ballctx.done)
@@ -130,7 +131,7 @@ void metaballs::draw(SDL_Renderer *renderer)
 
             // mark balls done when gone full circle
             for (auto &octx : ctx) {
-                if ((octx.ball != ballctx.ball || DRAW_LOWER_THRESH)
+                if ((octx.ball != ballctx.ball || until > DRAW_LOWER_THRESH)
                         && std::abs(octx.initp - ballctx.edgep) <= step) {
                     ballctx.done = true;
                 }
