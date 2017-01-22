@@ -14,6 +14,8 @@ set (SOURCES
   src/textures.cc
   src/textures.h
   src/tickable.h
+  src/ui.cc
+  src/ui.h
 )
 
 if (NOT WIN32)

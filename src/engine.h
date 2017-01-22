@@ -3,6 +3,7 @@
 
 #include "camera.h"
 #include "level.h"
+#include "ui.h"
 
 struct engine {
     engine();
@@ -16,6 +17,7 @@ struct engine {
 
     class level level;
     class camera camera;
+    class ui ui;
 
     SDL_Window *window;
     SDL_Renderer *renderer;

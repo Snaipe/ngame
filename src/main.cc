@@ -9,6 +9,7 @@
 
 #include "engine.h"
 #include "metaball.h"
+#include "textures.h"
 
 class quit {};
 
@@ -80,10 +81,14 @@ void engine::tick(double dt)
     SDL_RenderClear(renderer);
 
     level.tick(dt);
+    ui.tick(dt);
+
     level.draw(renderer);
 
     SDL_SetRenderTarget(renderer, NULL);
     SDL_RenderCopy(renderer, out, NULL, NULL);
+
+    ui.draw(renderer);
 
     SDL_RenderPresent(renderer);
     SDL_DestroyTexture(out);
@@ -94,6 +99,7 @@ void engine::start()
     using namespace std::complex_literals;
 
     camera.zoom = 0.1;
+    textures::init();
 
     level.add_entity(entity((300 + 400i) / camera.zoom));
     level.add_entity(entity((400 + 500i) / camera.zoom));
@@ -124,6 +130,7 @@ void engine::start()
 int main(int argc, char *argv[])
 {
     SDL_Init(SDL_INIT_EVERYTHING);
+    SDL_ShowCursor(SDL_DISABLE);
 
     try {
         engine e;
@@ -135,6 +142,7 @@ int main(int argc, char *argv[])
         std::cout << ex.what() << std::endl;
     }
 
+    SDL_ShowCursor(SDL_ENABLE);
     SDL_Quit();
     return 0;
 }
