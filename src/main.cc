@@ -80,8 +80,8 @@ void engine::tick(double dt)
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    level.tick(dt);
     ui.tick(dt);
+    level.tick(dt);
 
     level.draw(renderer);
 
@@ -98,17 +98,23 @@ void engine::start()
 {
     using namespace std::complex_literals;
 
+    level.add_group({ 0, 255, 255, 255 });
+    level.add_group({ 255, 0, 255, 255 });
+
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
     camera.zoom = 0.1;
     textures::init();
 
-    level.add_entity(entity((300 + 400i) / camera.zoom));
-    level.add_entity(entity((400 + 500i) / camera.zoom));
-    level.add_entity(entity((200 + 200i) / camera.zoom));
-    level.add_entity(entity((100 + 100i) / camera.zoom));
-    level.add_entity(entity((500 + 600i) / camera.zoom));
-    level.add_entity(entity((600 + 500i) / camera.zoom));
+    level.add_entity(std::make_shared<entity>((300 + 400i) / camera.zoom));
+    level.add_entity(std::make_shared<entity>((400 + 500i) / camera.zoom));
+    level.add_entity(std::make_shared<entity>((200 + 200i) / camera.zoom));
+    level.add_entity(std::make_shared<entity>((100 + 100i) / camera.zoom));
+    level.add_entity(std::make_shared<entity>((500 + 600i) / camera.zoom));
+    level.add_entity(std::make_shared<entity>((600 + 500i) / camera.zoom));
+
+    for (auto &e : level.entities)
+        level.groups[0].add(e);
 
     ui.add(std::make_shared<colorpick>(200, 200));
 

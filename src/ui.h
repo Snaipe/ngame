@@ -32,6 +32,13 @@ public:
     void close() override;
 };
 
+class group_picker : public ui_element {
+public:
+    group_picker();
+    void tick(double dt) override;
+    void draw(SDL_Renderer *renderer) override;
+};
+
 class colorpick : public ui_element {
 public:
     colorpick(int x, int y, int w = 150, int h = 150);

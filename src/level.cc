@@ -9,8 +9,27 @@
 #define SELECT_THRESHOLD 10
 #define PICK_THRESHOLD 30
 
+group_type::group_type(SDL_Color c)
+    : color(c)
+{}
+
+void group_type::add(std::shared_ptr<entity> e)
+{
+    members.insert(e);
+    e->color = color;
+    if (e->group)
+        e->group->remove(e);
+    e->group = this;
+}
+
+void group_type::remove(std::shared_ptr<entity> e)
+{
+    members.erase(e);
+    e->group = nullptr;
+}
+
 entity::entity(std::complex<double> pos)
-    : color({ 255, 255, 0, 255 })
+    : group(nullptr)
     , ai()
     , mb(2, 0.00004, metaball(pos, 2), metaball(pos, 1.5))
 {
@@ -67,17 +86,16 @@ level::level()
 {
 }
 
-void level::select(entity &e)
+void level::select(const std::shared_ptr<entity> &e)
 {
-    e.color = { 255, 255, 255, 255 };
-    selected.insert(&e);
+    e->color = { 255, 255, 255, 255 };
+    selected.insert(e);
 }
 
 void level::deselect_all()
 {
     for (auto &e : selected) {
-        //e.color = e.group.color;
-        e->color = { 255, 255, 0, 255 };
+        e->color = e->group->color;
     }
     selected.clear();
 }
@@ -88,7 +106,7 @@ void level::draw(SDL_Renderer *renderer)
         e.draw(renderer);
     }
     for (auto &e : entities) {
-        e.draw(renderer);
+        e->draw(renderer);
     }
 }
 
@@ -117,10 +135,10 @@ void level::tick(double dt)
     }
 
     for (auto &e : entities) {
-        e.tick(dt);
+        e->tick(dt);
 
         if (do_select) {
-            SDL_Point p = engine::get().camera.coord_to_pixel(e.pos());
+            SDL_Point p = engine::get().camera.coord_to_pixel(e->pos());
             if (((p.x >= select_area.x && p.x <= select_area.x + select_area.w)
               || (p.x <= select_area.x && p.x >= select_area.x + select_area.w))
              && ((p.y >= select_area.y && p.y <= select_area.y + select_area.h)
@@ -129,7 +147,7 @@ void level::tick(double dt)
                 select(e);
             }
         } else if (do_pick) {
-            SDL_Point p = engine::get().camera.coord_to_pixel(e.pos());
+            SDL_Point p = engine::get().camera.coord_to_pixel(e->pos());
             if (std::pow(p.x - mouse.x, 2) + std::pow(p.y - mouse.y, 2)
                     < PICK_THRESHOLD * PICK_THRESHOLD) {
                 select(e);
@@ -145,7 +163,12 @@ void level::tick(double dt)
     }
 }
 
-void level::add_entity(entity e)
+void level::add_entity(const std::shared_ptr<entity> &e)
+{
+    entities.push_back(e);
+}
+
+void level::add_entity(std::shared_ptr<entity> &&e)
 {
     entities.push_back(e);
 }
@@ -153,4 +176,9 @@ void level::add_entity(entity e)
 void level::add_bgelement(bgelement e)
 {
     bgelements.push_back(e);
+}
+
+void level::add_group(SDL_Color c)
+{
+    groups.emplace_back(c);
 }

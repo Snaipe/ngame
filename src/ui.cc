@@ -1,12 +1,15 @@
 #include <cmath>
 #include <complex>
-#include <iostream> //FIXME: remove
+#include <iostream>
 
 #include <SDL2/SDL_mouse.h>
 
 #include "engine.h"
 #include "textures.h"
 #include "ui.h"
+
+#define GROUP_TILE_WIDTH 25
+#define GROUP_TILE_MARGIN 20
 
 ui_element::ui_element(int x, int y, int w, int h)
     : SDL_Rect({x, y, w, h})
@@ -43,7 +46,9 @@ void ui_element::close()
 
 ui::ui()
     : ui_element(0, 0, 0, 0)
-{}
+{
+    add(std::make_shared<group_picker>());
+}
 
 void ui::draw(SDL_Renderer *renderer)
 {
@@ -157,4 +162,73 @@ void colorpick::draw(SDL_Renderer *renderer)
 {
     SDL_Rect dst = { x, y, w, h };
     SDL_RenderCopy(renderer, texture, NULL, &dst);
+}
+
+group_picker::group_picker()
+    : ui_element(0, 0, 0, 0)
+{}
+
+static void group_picker_boundaries(int offset, SDL_Point &a, SDL_Point &b)
+{
+    a = {
+        engine::get().screen_width - offset * (GROUP_TILE_WIDTH + GROUP_TILE_MARGIN),
+        GROUP_TILE_MARGIN
+    };
+    b = {
+        engine::get().screen_width - (offset - 1) * (GROUP_TILE_WIDTH + GROUP_TILE_MARGIN) - GROUP_TILE_MARGIN,
+        GROUP_TILE_MARGIN + GROUP_TILE_WIDTH
+    };
+}
+
+void group_picker::tick(double dt)
+{
+    static Uint32 laststate;
+
+    SDL_Point mouse;
+    Uint32 state = SDL_GetMouseState(&mouse.x, &mouse.y);
+
+    if ((laststate & SDL_BUTTON_LMASK) & !(state & SDL_BUTTON_LMASK)) {
+        std::cout << "clicked @ " << mouse.x << ", " << mouse.y << std::endl;
+        level &level = engine::get().level;
+
+        int offset = 1;
+        for (auto &g : level.groups) {
+            SDL_Point a, b;
+            group_picker_boundaries(offset, a, b);
+
+            if (mouse.x >= a.x && mouse.x <= b.x
+                    && mouse.y >= a.y && mouse.y <= b.y) {
+
+                std::cout << "clicked in picker" << std::endl;
+                for (auto &e : level.selected) {
+                    g.add(e);
+                }
+            }
+            ++offset;
+        }
+    }
+
+    laststate = state;
+}
+
+void group_picker::draw(SDL_Renderer *renderer)
+{
+    level &level = engine::get().level;
+
+    int offset = 1;
+    for (auto &g : level.groups) {
+        SDL_Point a, b;
+        group_picker_boundaries(offset, a, b);
+
+        SDL_SetRenderDrawColor(renderer, g.color.r, g.color.g, g.color.b, 255);
+        SDL_Rect fill = { a.x, a.y, b.x - a.x, b.y - a.y };
+        SDL_RenderFillRect(renderer, &fill);
+
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderDrawLine(renderer, a.x, a.y, a.x, b.y);
+        SDL_RenderDrawLine(renderer, a.x, a.y, b.x, a.y);
+        SDL_RenderDrawLine(renderer, b.x, a.y, b.x, b.y);
+        SDL_RenderDrawLine(renderer, a.x, b.y, b.x, b.y);
+        ++offset;
+    }
 }

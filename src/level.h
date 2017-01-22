@@ -2,10 +2,11 @@
 #define LEVEL_HH_
 
 #include <complex>
+#include <memory>
 #include <queue>
-#include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include <SDL2/SDL_render.h>
 
@@ -22,6 +23,19 @@ struct entity_attr {
     double speed;
 };
 
+class entity;
+
+struct group_type
+{
+    group_type(SDL_Color c);
+
+    SDL_Color color;
+    std::unordered_set<std::shared_ptr<entity>> members;
+
+    void add(std::shared_ptr<entity> e);
+    void remove(std::shared_ptr<entity> e);
+};
+
 class entity
     : public virtual drawable
     , public virtual tickable
@@ -34,6 +48,8 @@ public:
 
     std::complex<double> pos();
     SDL_Color color;
+
+    group_type *group;
 
     std::complex<double> velocity;
     std::complex<double> goal;
@@ -64,18 +80,22 @@ public:
 
     void draw(SDL_Renderer *renderer) override;
     void tick(double dt) override;
-    void add_entity(entity e);
+    void add_entity(const std::shared_ptr<entity> &e);
+    void add_entity(std::shared_ptr<entity> &&e);
     void add_bgelement(bgelement e);
+    void add_group(SDL_Color c);
 
-    void select(entity &e);
+    void select(const std::shared_ptr<entity> &e);
     void deselect_all();
 
     SDL_Rect select_area;
-    std::unordered_set<entity *> selected;
+    std::unordered_set<std::shared_ptr<entity>> selected;
+    std::vector<group_type> groups;
+    std::vector<std::shared_ptr<entity>> entities;
+
 private:
     // TODO: octrees if too slow to process
     std::vector<bgelement> bgelements;
-    std::vector<entity> entities;
 };
 
 #endif /* !LEVEL_HH_ */
