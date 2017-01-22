@@ -93,7 +93,7 @@ struct ballcontext {
     bool done;
 };
 
-void metaballs::draw(SDL_Renderer *renderer)
+void metaballs::draw(SDL_Renderer *renderer, SDL_Color &color)
 {
     using namespace std::complex_literals;
 
@@ -123,7 +123,7 @@ void metaballs::draw(SDL_Renderer *renderer)
             ballctx.edgep += step * tangent(ballctx.edgep + tangent(ballctx.edgep) * step / 2.);
             correct_edge(ballctx.edgep);
 
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
             SDL_Point pprev = engine::get().camera.coord_to_pixel(prev);
             SDL_Point pnext = engine::get().camera.coord_to_pixel(ballctx.edgep);

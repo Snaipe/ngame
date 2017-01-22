@@ -54,6 +54,20 @@ void ui::draw(SDL_Renderer *renderer)
     mouse.x -= textures::crosshair->w / 2;
     mouse.y -= textures::crosshair->h / 2;
     textures::crosshair->draw(renderer, mouse);
+
+    level &level = engine::get().level;
+    if (level.select_area.x != -1 || level.select_area.y != -1) {
+        SDL_Point a = { level.select_area.x, level.select_area.y };
+        SDL_Point b = {
+            level.select_area.x + level.select_area.w,
+            level.select_area.y + level.select_area.h
+        };
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderDrawLine(renderer, a.x, a.y, a.x, b.y);
+        SDL_RenderDrawLine(renderer, a.x, a.y, b.x, a.y);
+        SDL_RenderDrawLine(renderer, b.x, a.y, b.x, b.y);
+        SDL_RenderDrawLine(renderer, a.x, b.y, b.x, b.y);
+    }
 }
 
 void ui::close()

@@ -5,6 +5,7 @@
 #include <queue>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <SDL2/SDL_render.h>
 
@@ -65,6 +66,12 @@ public:
     void tick(double dt) override;
     void add_entity(entity e);
     void add_bgelement(bgelement e);
+
+    void select(entity &e);
+    void deselect_all();
+
+    SDL_Rect select_area;
+    std::unordered_set<entity *> selected;
 private:
     // TODO: octrees if too slow to process
     std::vector<bgelement> bgelements;

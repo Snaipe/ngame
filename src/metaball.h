@@ -32,7 +32,7 @@ public:
         recompute_size();
     }
 
-    void draw(SDL_Renderer *renderer);
+    void draw(SDL_Renderer *renderer, SDL_Color &color);
     void add_ball(metaball mb);
     std::vector<metaball> &getballs();
 private:
