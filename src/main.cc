@@ -98,8 +98,12 @@ void engine::start()
 {
     using namespace std::complex_literals;
 
-    level.add_group({ 0, 255, 255, 255 });
-    level.add_group({ 255, 0, 255, 255 });
+    level.add_group({ 0, 252, 133, 255 });
+    level.add_group({ 247, 11, 119, 255 });
+    level.add_group({ 255, 201, 20, 255 });
+    level.add_group({ 25, 76, 142, 255 });
+    level.add_group({ 147, 69, 243, 255 });
+    level.add_group({ 255, 69, 62, 255 });
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
@@ -115,8 +119,6 @@ void engine::start()
 
     for (auto &e : level.entities)
         level.groups[0].add(e);
-
-    ui.add(std::make_shared<colorpick>(200, 200));
 
     SDL_RaiseWindow(window);
 
