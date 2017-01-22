@@ -98,6 +98,8 @@ void engine::start()
 {
     using namespace std::complex_literals;
 
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
     camera.zoom = 0.1;
     textures::init();
 
@@ -107,6 +109,8 @@ void engine::start()
     level.add_entity(entity((100 + 100i) / camera.zoom));
     level.add_entity(entity((500 + 600i) / camera.zoom));
     level.add_entity(entity((600 + 500i) / camera.zoom));
+
+    ui.add(std::make_shared<colorpick>(200, 200));
 
     SDL_RaiseWindow(window);
 
