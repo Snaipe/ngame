@@ -3,63 +3,14 @@
 
 #include <complex>
 #include <memory>
-#include <queue>
-#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include <SDL2/SDL_render.h>
 
-#include "ai.h"
 #include "drawable.h"
-#include "metaball.h"
+#include "genetics.h"
 #include "tickable.h"
-
-struct entity_attr {
-    constexpr entity_attr()
-        : speed(1000)
-    {}
-
-    double speed;
-};
-
-class entity;
-
-struct group_type
-{
-    group_type(SDL_Color c);
-
-    SDL_Color color;
-    std::unordered_set<std::shared_ptr<entity>> members;
-
-    void add(std::shared_ptr<entity> e);
-    void remove(std::shared_ptr<entity> e);
-};
-
-class entity
-    : public virtual drawable
-    , public virtual tickable
-{
-public:
-    entity(std::complex<double> pos);
-
-    void draw(SDL_Renderer *renderer) override;
-    void tick(double dt) override;
-
-    std::complex<double> pos();
-    SDL_Color color;
-
-    group_type *group;
-
-    std::complex<double> velocity;
-    std::complex<double> goal;
-    entity_attr attr;
-    state_machine ai;
-
-private:
-    std::queue<std::complex<double>> lastpos;
-    struct metaballs mb;
-};
 
 struct bgelement
     : public virtual drawable
@@ -90,8 +41,8 @@ public:
 
     SDL_Rect select_area;
     std::unordered_set<std::shared_ptr<entity>> selected;
-    std::vector<group_type> groups;
-    std::vector<std::shared_ptr<entity>> entities;
+
+    population pop;
 
 private:
     // TODO: octrees if too slow to process

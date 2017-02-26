@@ -9,66 +9,6 @@
 #define SELECT_THRESHOLD 10
 #define PICK_THRESHOLD 30
 
-group_type::group_type(SDL_Color c)
-    : color(c)
-{}
-
-void group_type::add(std::shared_ptr<entity> e)
-{
-    members.insert(e);
-    e->color = color;
-    if (e->group)
-        e->group->remove(e);
-    e->group = this;
-}
-
-void group_type::remove(std::shared_ptr<entity> e)
-{
-    members.erase(e);
-    e->group = nullptr;
-}
-
-entity::entity(std::complex<double> pos)
-    : group(nullptr)
-    , ai()
-    , mb(2, 0.00004, metaball(pos, 2), metaball(pos, 1.5))
-{
-    for (size_t i = 0; i < 2 / engine::get().framerate; ++i)
-        lastpos.push(pos);
-
-    ai.push(*this, ai_state::FIND_FOOD);
-}
-
-void entity::tick(double dt)
-{
-    ai.tick(*this, dt);
-
-    std::complex<double> p = pos();
-
-    // dp / dt = v -> p(n+1) - p(n) = v * dt
-    p += velocity * dt;
-
-    mb.getballs()[0].real(p.real());
-    mb.getballs()[0].imag(p.imag());
-
-    lastpos.push(p);
-
-    p = lastpos.front();
-    mb.getballs()[1].real(p.real());
-    mb.getballs()[1].imag(p.imag());
-    lastpos.pop();
-}
-
-std::complex<double> entity::pos()
-{
-    return mb.getballs()[0];
-}
-
-void entity::draw(SDL_Renderer *renderer)
-{
-    mb.draw(renderer, color);
-}
-
 bgelement::bgelement(SDL_Texture *tex_, std::complex<double> pos_)
     : pos(pos_)
     , tex(tex_)
@@ -105,7 +45,7 @@ void level::draw(SDL_Renderer *renderer)
     for (auto &e : bgelements) {
         e.draw(renderer);
     }
-    for (auto &e : entities) {
+    for (auto &e : pop.entities) {
         e->draw(renderer);
     }
 }
@@ -134,9 +74,10 @@ void level::tick(double dt)
             do_pick = true;
     }
 
-    for (auto &e : entities) {
-        e->tick(dt);
+    if (!engine::get().paused)
+        pop.tick(dt);
 
+    for (auto &e : pop.entities) {
         if (do_select) {
             SDL_Point p = engine::get().camera.coord_to_pixel(e->pos());
             if (((p.x >= select_area.x && p.x <= select_area.x + select_area.w)
@@ -165,12 +106,12 @@ void level::tick(double dt)
 
 void level::add_entity(const std::shared_ptr<entity> &e)
 {
-    entities.push_back(e);
+    pop.entities.insert(e);
 }
 
 void level::add_entity(std::shared_ptr<entity> &&e)
 {
-    entities.push_back(e);
+    pop.entities.insert(e);
 }
 
 void level::add_bgelement(bgelement e)
@@ -180,5 +121,5 @@ void level::add_bgelement(bgelement e)
 
 void level::add_group(SDL_Color c)
 {
-    groups.emplace_back(c);
+    pop.groups.emplace_back(c);
 }

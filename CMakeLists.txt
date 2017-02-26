@@ -16,6 +16,8 @@ set (SOURCES
   src/tickable.h
   src/ui.cc
   src/ui.h
+  src/genetics.cc
+  src/genetics.h
 )
 
 if (NOT WIN32)

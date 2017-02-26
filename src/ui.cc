@@ -192,7 +192,7 @@ void group_picker::tick(double dt)
         level &level = engine::get().level;
 
         int offset = 1;
-        for (auto &g : level.groups) {
+        for (auto &g : level.pop.groups) {
             SDL_Point a, b;
             group_picker_boundaries(offset, a, b);
 
@@ -216,7 +216,7 @@ void group_picker::draw(SDL_Renderer *renderer)
     level &level = engine::get().level;
 
     int offset = 1;
-    for (auto &g : level.groups) {
+    for (auto &g : level.pop.groups) {
         SDL_Point a, b;
         group_picker_boundaries(offset, a, b);
 

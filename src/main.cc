@@ -117,8 +117,8 @@ void engine::start()
     level.add_entity(std::make_shared<entity>((500 + 600i) / camera.zoom));
     level.add_entity(std::make_shared<entity>((600 + 500i) / camera.zoom));
 
-    for (auto &e : level.entities)
-        level.groups[0].add(e);
+    for (auto &e : level.pop.entities)
+        level.pop.groups[0].add(e);
 
     SDL_RaiseWindow(window);
 
