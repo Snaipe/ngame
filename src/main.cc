@@ -57,6 +57,8 @@ void engine::tick(double dt)
                     camera.zoom /= 1.1;
                 break;
             case SDL_KEYDOWN:
+                if (ev.key.keysym.sym == SDLK_SPACE)
+                    paused = !paused;
                 if (ev.key.keysym.sym == SDLK_ESCAPE)
                     throw quit();
                 break;

@@ -14,6 +14,7 @@ struct engine {
     double framerate;
     int screen_width;
     int screen_height;
+    bool paused;
 
     class level level;
     class camera camera;
