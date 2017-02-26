@@ -6,6 +6,7 @@
 #include <SDL2/SDL_error.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_video.h>
+#include <SDL2/SDL_image.h>
 
 #include "engine.h"
 #include "metaball.h"
@@ -144,6 +145,7 @@ void engine::start()
 int main(int argc, char *argv[])
 {
     SDL_Init(SDL_INIT_EVERYTHING);
+    IMG_Init(IMG_INIT_PNG);
     SDL_ShowCursor(SDL_DISABLE);
 
     try {
@@ -157,6 +159,7 @@ int main(int argc, char *argv[])
     }
 
     SDL_ShowCursor(SDL_ENABLE);
+    IMG_Quit();
     SDL_Quit();
     return 0;
 }

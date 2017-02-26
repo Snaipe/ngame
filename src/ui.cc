@@ -11,6 +11,10 @@
 
 #define GROUP_TILE_WIDTH 25
 #define GROUP_TILE_MARGIN 20
+#define STAT_MARGIN 20
+#define STAT_COL_WIDTH 80
+#define STAT_PANEL (2 * STAT_COL_WIDTH + 3 * STAT_MARGIN)
+#define STAT_PANEL_VELOCITY_THRESH 30
 
 ui_element::ui_element(int x, int y, int w, int h)
     : SDL_Rect({x, y, w, h})
@@ -49,6 +53,7 @@ ui::ui()
     : ui_element(0, 0, 0, 0)
 {
     add(std::make_shared<group_picker>());
+    add(std::make_shared<stat_panel>());
 }
 
 void ui::draw(SDL_Renderer *renderer)
@@ -79,8 +84,6 @@ void ui::draw(SDL_Renderer *renderer)
 void ui::close()
 {
 }
-
-
 
 colorpick::colorpick(int x, int y, int w, int h)
     : ui_element(x, y, w, h)
@@ -201,4 +204,97 @@ void group_picker::draw(SDL_Renderer *renderer)
         SDL_RenderDrawLine(renderer, a.x, b.y, b.x, b.y);
         ++offset;
     }
+}
+
+stat_panel::stat_panel()
+    : ui_element(0, 0, STAT_PANEL, 0)
+{}
+
+void stat_panel::tick(double dt)
+{
+    const double acceleration = 10.;
+    if (engine::get().level.selected.empty()) {
+        if (x < STAT_PANEL_VELOCITY_THRESH && x > 0)
+            transvelocity -= acceleration * dt;
+        else if (x > 0)
+            transvelocity = 1000.;
+        else
+            transvelocity = 0;
+        x -= transvelocity * dt;
+    } else if (x < w) {
+        if (w - x < STAT_PANEL_VELOCITY_THRESH)
+            transvelocity -= acceleration * dt;
+        else if (w - x > 0)
+            transvelocity = 1000.;
+        else
+            transvelocity = 0;
+        x += transvelocity * dt;
+    }
+}
+
+static int draw_ratioed_icon(SDL_Renderer *renderer, texture &full, texture &contour, SDL_Point p, double ratio)
+{
+    //p.y += (STAT_PANEL / rescale - full.h) / 2;
+
+    int full_y = full.h * (ratio);
+    SDL_Rect perc = { 0, full.h - full_y, full.w, full_y };
+    SDL_Point point = { int(p.x), int(p.y + (full.h - full_y)) };
+    full.draw(renderer, point, &perc);
+
+    point = { int(p.x), int(p.y) };
+    contour.draw(renderer, point);
+
+    return p.y + full.h + STAT_MARGIN;
+}
+
+static int draw_heart(SDL_Renderer *renderer, int x, int y, double mean_health, double mean_max_health)
+{
+    SDL_Point p = { x, y };
+    return draw_ratioed_icon(renderer,
+            *textures::trait_major_heart_full,
+            *textures::trait_major_heart,
+            p, mean_health / mean_max_health);
+}
+
+static int draw_hourglass(SDL_Renderer *renderer, int x, int y, double mean_age, double mean_max_age)
+{
+    SDL_Point p = { x, y };
+    return draw_ratioed_icon(renderer,
+            *textures::trait_major_hourglass_full,
+            *textures::trait_major_hourglass,
+            p, 1 - mean_age / mean_max_age);
+}
+
+void stat_panel::draw(SDL_Renderer *renderer)
+{
+    auto &engine = engine::get();
+    int panel_x = x;
+    SDL_Rect rect = {0, 0, panel_x, engine.screen_height};
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderFillRect(renderer, &rect);
+
+    double mean_age = 0;
+    double mean_max_age = 0;
+
+    for (auto &s : engine.level.selected) {
+        mean_age        += s->age;
+        mean_max_age    += s->attr.max_age;
+    }
+
+    mean_age     /= (double) engine.level.selected.size();
+    mean_max_age /= (double) engine.level.selected.size();
+
+    {
+        int y = STAT_MARGIN, x = panel_x - w + STAT_MARGIN;
+        y += draw_hourglass(renderer, x, y, mean_age, mean_max_age);
+    }
+
+    {
+        int y = STAT_MARGIN, x = panel_x - w + STAT_COL_WIDTH + 2 * STAT_MARGIN;
+        y += draw_heart(renderer, x, y, 100, 100);
+    }
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDrawLine(renderer, panel_x, 0, panel_x, engine.screen_height);
 }

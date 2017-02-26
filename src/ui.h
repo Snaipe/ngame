@@ -48,4 +48,13 @@ private:
     SDL_Texture *texture;
 };
 
+class stat_panel : public ui_element {
+public:
+    stat_panel();
+    void tick(double dt) override;
+    void draw(SDL_Renderer *renderer) override;
+private:
+    double transvelocity;
+};
+
 #endif /* !UI_H_ */
