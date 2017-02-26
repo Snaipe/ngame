@@ -28,6 +28,7 @@ private:
 class ui : public ui_element {
 public:
     ui();
+    void tick(double dt) override;
     void draw(SDL_Renderer *renderer) override;
     void close() override;
 };

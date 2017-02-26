@@ -56,8 +56,63 @@ ui::ui()
     add(std::make_shared<stat_panel>());
 }
 
+void ui::tick(double dt)
+{
+    ui_element::tick(dt);
+
+    level &level = engine::get().level;
+
+    if (!(level.laststate & SDL_BUTTON_LMASK)) {
+        double a = level.select_area_color.a - 1000. * dt;
+        if (a < 0)
+            a = 0;
+        level.select_area_color.a = Uint8(a);
+    }
+}
+
 void ui::draw(SDL_Renderer *renderer)
 {
+    level &level = engine::get().level;
+
+    {
+        SDL_Point a = { level.select_area.x, level.select_area.y };
+        SDL_Point b = {
+            level.select_area.x + level.select_area.w,
+            level.select_area.y + level.select_area.h
+        };
+        SDL_Color &c = level.select_area_color;
+        SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+        SDL_RenderDrawLine(renderer, a.x, a.y, a.x, b.y);
+        SDL_RenderDrawLine(renderer, a.x, a.y, b.x, a.y);
+        SDL_RenderDrawLine(renderer, b.x, a.y, b.x, b.y);
+        SDL_RenderDrawLine(renderer, a.x, b.y, b.x, b.y);
+    }
+
+    {
+        SDL_Point a = { level.create_area.x, level.create_area.y };
+        SDL_Point b = {
+            level.create_area.x + level.create_area.w,
+            level.create_area.y + level.create_area.h
+        };
+
+        SDL_Color c = colors::white;
+        auto s = level.selected.begin();
+        if (s != level.selected.end()) {
+            c = (*s)->group->color;
+        }
+
+        SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 25);
+        SDL_Rect r = { std::min(a.x, b.x), std::min(a.y, b.y),
+                       std::abs(a.x - b.x), std::abs(a.y - b.y) };
+        SDL_RenderFillRect(renderer, &r);
+
+        SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255);
+        SDL_RenderDrawLine(renderer, a.x, a.y, a.x, b.y);
+        SDL_RenderDrawLine(renderer, a.x, a.y, b.x, a.y);
+        SDL_RenderDrawLine(renderer, b.x, a.y, b.x, b.y);
+        SDL_RenderDrawLine(renderer, a.x, b.y, b.x, b.y);
+    }
+
     ui_element::draw(renderer);
 
     SDL_Point mouse;
@@ -65,20 +120,6 @@ void ui::draw(SDL_Renderer *renderer)
     mouse.x -= textures::crosshair->w / 2;
     mouse.y -= textures::crosshair->h / 2;
     textures::crosshair->draw(renderer, mouse);
-
-    level &level = engine::get().level;
-    if (level.select_area.x != -1 || level.select_area.y != -1) {
-        SDL_Point a = { level.select_area.x, level.select_area.y };
-        SDL_Point b = {
-            level.select_area.x + level.select_area.w,
-            level.select_area.y + level.select_area.h
-        };
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_RenderDrawLine(renderer, a.x, a.y, a.x, b.y);
-        SDL_RenderDrawLine(renderer, a.x, a.y, b.x, a.y);
-        SDL_RenderDrawLine(renderer, b.x, a.y, b.x, b.y);
-        SDL_RenderDrawLine(renderer, a.x, b.y, b.x, b.y);
-    }
 }
 
 void ui::close()
@@ -161,7 +202,6 @@ void group_picker::tick(double dt)
     Uint32 state = SDL_GetMouseState(&mouse.x, &mouse.y);
 
     if ((laststate & SDL_BUTTON_LMASK) & !(state & SDL_BUTTON_LMASK)) {
-        std::cout << "clicked @ " << mouse.x << ", " << mouse.y << std::endl;
         level &level = engine::get().level;
 
         int offset = 1;
@@ -172,10 +212,16 @@ void group_picker::tick(double dt)
             if (mouse.x >= a.x && mouse.x <= b.x
                     && mouse.y >= a.y && mouse.y <= b.y) {
 
-                std::cout << "clicked in picker" << std::endl;
-                for (auto &e : level.selected) {
-                    g.add(e);
+                if (level.selected.empty()) {
+                    for (auto &s : g.members) {
+                        level.select(s);
+                    }
+                } else {
+                    for (auto &e : level.selected) {
+                        g.add(e);
+                    }
                 }
+                break;
             }
             ++offset;
         }
