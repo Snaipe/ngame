@@ -3,6 +3,7 @@
 #include <SDL2/SDL_mouse.h>
 
 #include "ai.h"
+#include "colors.h"
 #include "engine.h"
 #include "level.h"
 

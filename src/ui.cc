@@ -4,6 +4,7 @@
 
 #include <SDL2/SDL_mouse.h>
 
+#include "colors.h"
 #include "engine.h"
 #include "textures.h"
 #include "ui.h"
@@ -79,38 +80,7 @@ void ui::close()
 {
 }
 
-static void HSVtoRGB(double h, double s, double v, int &r, int &g, int &b) {
-    double chroma = v * s;
 
-    h = std::fmod(h / 60.0, 6);
-    double fX = chroma * (1 - fabs(fmod(h, 2) - 1));
-    double fM = v - chroma;
-
-    double fR = 0, fG = 0, fB = 0;
-    if( 0 <= h && h < 1) {
-        fR = chroma;
-        fG = fX;
-    } else if (1 <= h && h < 2) {
-        fR = fX;
-        fG = chroma;
-    } else if (2 <= h && h < 3) {
-        fG = chroma;
-        fB = fX;
-    } else if (3 <= h && h < 4) {
-        fG = fX;
-        fB = chroma;
-    } else if (4 <= h && h < 5) {
-        fR = fX;
-        fB = chroma;
-    } else if (5 <= h && h < 6) {
-        fR = chroma;
-        fB = fX;
-    }
-
-    r = int((fR + fM) * 255);
-    g = int((fG + fM) * 255);
-    b = int((fB + fM) * 255);
-}
 
 colorpick::colorpick(int x, int y, int w, int h)
     : ui_element(x, y, w, h)
@@ -143,7 +113,7 @@ colorpick::colorpick(int x, int y, int w, int h)
             double hue = std::fmod(std::floor(std::arg(p - c) / twopi * 360.) + 360., 360.);
 
             int r, g, b;
-            HSVtoRGB(hue, 0.85, 0.8, r, g, b);
+            colors::hsv_to_rgb(hue, 0.85, 0.8, r, g, b);
 
             SDL_SetRenderDrawColor(renderer, r, g, b, 255);
             SDL_RenderDrawPoint(renderer, px, py);

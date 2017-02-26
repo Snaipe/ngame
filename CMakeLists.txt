@@ -18,6 +18,8 @@ set (SOURCES
   src/ui.h
   src/genetics.cc
   src/genetics.h
+  src/colors.cc
+  src/colors.h
 )
 
 if (NOT WIN32)
