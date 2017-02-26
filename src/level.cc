@@ -52,63 +52,76 @@ void level::draw(SDL_Renderer *renderer)
     }
 }
 
+void level::init() {
+    using namespace event;
+
+    auto &em = engine::get().event_manager;
+    em.register_handler<mouse_event>([this](auto &ev) { return this->handle_mouse(ev); }, priorities::NORMAL);
+}
+
+bool level::handle_mouse(event::mouse_event &ev)
+{
+    if (ev.left_pressed()) {
+        if (ev.left_clicked()) {
+            select_area_color = colors::white;
+            select_area.x = ev.position.x;
+            select_area.y = ev.position.y;
+        }
+        select_area.w = ev.position.x - select_area.x;
+        select_area.h = ev.position.y - select_area.y;
+        return true;
+    }
+
+    if (ev.left_released()) {
+        deselect_all();
+        select_area.w = ev.position.x - select_area.x;
+        select_area.h = ev.position.y - select_area.y;
+        if (std::abs(select_area.w * select_area.h) > SELECT_THRESHOLD) {
+            for (auto &e : pop.entities) {
+                SDL_Point p = engine::get().camera.coord_to_pixel(e->pos());
+                if (((p.x >= select_area.x && p.x <= select_area.x + select_area.w)
+                  || (p.x <= select_area.x && p.x >= select_area.x + select_area.w))
+                 && ((p.y >= select_area.y && p.y <= select_area.y + select_area.h)
+                  || (p.y <= select_area.y && p.y >= select_area.y + select_area.h)))
+                {
+                    select(e);
+                }
+            }
+        } else {
+            for (auto &e : pop.entities) {
+                SDL_Point p = engine::get().camera.coord_to_pixel(e->pos());
+                if (std::pow(p.x - ev.position.x, 2) + std::pow(p.y - ev.position.y, 2)
+                        < PICK_THRESHOLD * PICK_THRESHOLD) {
+                    select(e);
+                }
+            }
+        }
+        return true;
+    }
+
+    if (ev.right_pressed()) {
+        if (ev.right_clicked()) {
+            create_area.x = ev.position.x;
+            create_area.y = ev.position.y;
+        }
+        create_area.w = ev.position.x - create_area.x;
+        create_area.h = ev.position.y - create_area.y;
+        return true;
+    }
+
+    if (ev.right_released()) {
+        create_area.w = ev.position.x - create_area.x;
+        create_area.h = ev.position.y - create_area.y;
+        return true;
+    }
+
+    return false;
+}
+
 void level::tick(double dt)
 {
-    SDL_Point mouse;
-    Uint32 state = SDL_GetMouseState(&mouse.x, &mouse.y);
-
-    bool do_select = false, do_pick = false;
-    if (state & SDL_BUTTON_LMASK) {
-        if (!(laststate & SDL_BUTTON_LMASK)) {
-            select_area_color = colors::white;
-            select_area.x = mouse.x;
-            select_area.y = mouse.y;
-        }
-        select_area.w = mouse.x - select_area.x;
-        select_area.h = mouse.y - select_area.y;
-    } else if (laststate & SDL_BUTTON_LMASK) {
-        deselect_all();
-        select_area.w = mouse.x - select_area.x;
-        select_area.h = mouse.y - select_area.y;
-        if (std::abs(select_area.w * select_area.h) > SELECT_THRESHOLD)
-            do_select = true;
-        else
-            do_pick = true;
-    } else if (state & SDL_BUTTON_RMASK) {
-        if (!(laststate & SDL_BUTTON_RMASK)) {
-            create_area.x = mouse.x;
-            create_area.y = mouse.y;
-        }
-        create_area.w = mouse.x - create_area.x;
-        create_area.h = mouse.y - create_area.y;
-    } else if (laststate & SDL_BUTTON_RMASK) {
-        create_area.w = mouse.x - create_area.x;
-        create_area.h = mouse.y - create_area.y;
-    }
-
     if (!engine::get().paused)
         pop.tick(dt);
-
-    for (auto &e : pop.entities) {
-        if (do_select) {
-            SDL_Point p = engine::get().camera.coord_to_pixel(e->pos());
-            if (((p.x >= select_area.x && p.x <= select_area.x + select_area.w)
-              || (p.x <= select_area.x && p.x >= select_area.x + select_area.w))
-             && ((p.y >= select_area.y && p.y <= select_area.y + select_area.h)
-              || (p.y <= select_area.y && p.y >= select_area.y + select_area.h)))
-            {
-                select(e);
-            }
-        } else if (do_pick) {
-            SDL_Point p = engine::get().camera.coord_to_pixel(e->pos());
-            if (std::pow(p.x - mouse.x, 2) + std::pow(p.y - mouse.y, 2)
-                    < PICK_THRESHOLD * PICK_THRESHOLD) {
-                select(e);
-            }
-        }
-    }
-
-    laststate = state;
 }
 
 void level::add_entity(const std::shared_ptr<entity> &e)

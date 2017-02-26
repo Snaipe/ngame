@@ -8,6 +8,9 @@ set (SOURCES
   src/camera.cc
   src/camera.h
   src/drawable.h
+  src/event.cc
+  src/event.h
+  src/event.hxx
   src/level.cc
   src/level.h
   src/main.cc

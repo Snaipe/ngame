@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "drawable.h"
+#include "event.h"
 #include "tickable.h"
 
 class ui_element
@@ -36,8 +37,10 @@ public:
 class group_picker : public ui_element {
 public:
     group_picker();
-    void tick(double dt) override;
     void draw(SDL_Renderer *renderer) override;
+
+private:
+    static bool handle_mouse(event::mouse_event &ev);
 };
 
 class colorpick : public ui_element {

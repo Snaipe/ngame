@@ -29,6 +29,7 @@ class level
 public:
     level();
 
+    void init();
     void draw(SDL_Renderer *renderer) override;
     void tick(double dt) override;
     void add_entity(const std::shared_ptr<entity> &e);
@@ -39,7 +40,7 @@ public:
     void select(const std::shared_ptr<entity> &e);
     void deselect_all();
 
-    Uint32 laststate;
+    bool handle_mouse(event::mouse_event &ev);
 
     SDL_Color select_area_color;
     SDL_Rect select_area;

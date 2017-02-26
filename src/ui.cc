@@ -52,8 +52,6 @@ void ui_element::close()
 ui::ui()
     : ui_element(0, 0, 0, 0)
 {
-    add(std::make_shared<group_picker>());
-    add(std::make_shared<stat_panel>());
 }
 
 void ui::tick(double dt)
@@ -62,7 +60,8 @@ void ui::tick(double dt)
 
     level &level = engine::get().level;
 
-    if (!(level.laststate & SDL_BUTTON_LMASK)) {
+    Uint32 state = SDL_GetMouseState(NULL, NULL);
+    if (!(state & SDL_BUTTON_LMASK)) {
         double a = level.select_area_color.a - 1000. * dt;
         if (a < 0)
             a = 0;
@@ -180,7 +179,12 @@ void colorpick::draw(SDL_Renderer *renderer)
 
 group_picker::group_picker()
     : ui_element(0, 0, 0, 0)
-{}
+{
+    using namespace event;
+
+    auto &em = engine::get().event_manager;
+    em.register_handler<mouse_event>(handle_mouse, priorities::HIGH);
+}
 
 static void group_picker_boundaries(int offset, SDL_Point &a, SDL_Point &b)
 {
@@ -194,14 +198,9 @@ static void group_picker_boundaries(int offset, SDL_Point &a, SDL_Point &b)
     };
 }
 
-void group_picker::tick(double dt)
+bool group_picker::handle_mouse(event::mouse_event &ev)
 {
-    static Uint32 laststate;
-
-    SDL_Point mouse;
-    Uint32 state = SDL_GetMouseState(&mouse.x, &mouse.y);
-
-    if ((laststate & SDL_BUTTON_LMASK) & !(state & SDL_BUTTON_LMASK)) {
+    if (ev.left_released()) {
         level &level = engine::get().level;
 
         int offset = 1;
@@ -209,8 +208,8 @@ void group_picker::tick(double dt)
             SDL_Point a, b;
             group_picker_boundaries(offset, a, b);
 
-            if (mouse.x >= a.x && mouse.x <= b.x
-                    && mouse.y >= a.y && mouse.y <= b.y) {
+            if (ev.position.x >= a.x && ev.position.x <= b.x
+                    && ev.position.y >= a.y && ev.position.y <= b.y) {
 
                 if (level.selected.empty()) {
                     for (auto &s : g.members) {
@@ -221,13 +220,12 @@ void group_picker::tick(double dt)
                         g.add(e);
                     }
                 }
-                break;
+                return true;
             }
             ++offset;
         }
     }
-
-    laststate = state;
+    return false;
 }
 
 void group_picker::draw(SDL_Renderer *renderer)

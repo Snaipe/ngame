@@ -22,6 +22,7 @@ engine &engine::get() {
 
 engine::engine()
     : framerate(1./60.)
+    , paused(false)
 {
     window = SDL_CreateWindow("Game",
             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -81,9 +82,9 @@ void engine::tick(double dt)
     SDL_RenderClear(renderer);
 
     level.draw(renderer);
-
     ui.draw(renderer);
 
+    event_manager.tick(dt);
     ui.tick(dt);
     level.tick(dt);
 
@@ -93,6 +94,8 @@ void engine::tick(double dt)
 void engine::start()
 {
     using namespace std::complex_literals;
+
+    level.init();
 
     level.add_group({ 0, 252, 133, 255 });
     level.add_group({ 247, 11, 119, 255 });
@@ -117,6 +120,9 @@ void engine::start()
         level.pop.groups[0].add(e);
 
     SDL_RaiseWindow(window);
+
+    ui.add(std::make_shared<group_picker>());
+    ui.add(std::make_shared<stat_panel>());
 
     Uint64 last  = SDL_GetPerformanceCounter();
 

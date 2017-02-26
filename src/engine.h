@@ -2,6 +2,7 @@
 #define ENGINE_H_
 
 #include "camera.h"
+#include "event.h"
 #include "level.h"
 #include "ui.h"
 
@@ -19,6 +20,7 @@ struct engine {
     class level level;
     class camera camera;
     class ui ui;
+    class event::manager event_manager;
 
     SDL_Window *window;
     SDL_Renderer *renderer;
