@@ -24,6 +24,7 @@ void bgelement::draw(SDL_Renderer *renderer)
 
 level::level()
     : select_area({ -1, -1, -1, -1 })
+    , create_area({ -1, -1, -1, -1 })
 {
 }
 
@@ -58,14 +59,14 @@ void level::tick(double dt)
 
     bool do_select = false, do_pick = false;
     if (state & SDL_BUTTON_LMASK) {
-        if (select_area.x == -1 || select_area.y == -1) {
+        if (!(laststate & SDL_BUTTON_LMASK)) {
+            select_area_color = colors::white;
             select_area.x = mouse.x;
             select_area.y = mouse.y;
-        } else {
-            select_area.w = mouse.x - select_area.x;
-            select_area.h = mouse.y - select_area.y;
         }
-    } else if (select_area.x != -1 || select_area.y != -1) {
+        select_area.w = mouse.x - select_area.x;
+        select_area.h = mouse.y - select_area.y;
+    } else if (laststate & SDL_BUTTON_LMASK) {
         deselect_all();
         select_area.w = mouse.x - select_area.x;
         select_area.h = mouse.y - select_area.y;
@@ -73,6 +74,16 @@ void level::tick(double dt)
             do_select = true;
         else
             do_pick = true;
+    } else if (state & SDL_BUTTON_RMASK) {
+        if (!(laststate & SDL_BUTTON_RMASK)) {
+            create_area.x = mouse.x;
+            create_area.y = mouse.y;
+        }
+        create_area.w = mouse.x - create_area.x;
+        create_area.h = mouse.y - create_area.y;
+    } else if (laststate & SDL_BUTTON_RMASK) {
+        create_area.w = mouse.x - create_area.x;
+        create_area.h = mouse.y - create_area.y;
     }
 
     if (!engine::get().paused)
@@ -97,12 +108,7 @@ void level::tick(double dt)
         }
     }
 
-    if (!(state & SDL_BUTTON_LMASK)) {
-        select_area.x = -1;
-        select_area.y = -1;
-        select_area.w = -1;
-        select_area.h = -1;
-    }
+    laststate = state;
 }
 
 void level::add_entity(const std::shared_ptr<entity> &e)

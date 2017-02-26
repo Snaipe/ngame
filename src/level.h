@@ -39,8 +39,13 @@ public:
     void select(const std::shared_ptr<entity> &e);
     void deselect_all();
 
+    Uint32 laststate;
+
+    SDL_Color select_area_color;
     SDL_Rect select_area;
     std::unordered_set<std::shared_ptr<entity>> selected;
+
+    SDL_Rect create_area;
 
     population pop;
 
