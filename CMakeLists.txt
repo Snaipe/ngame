@@ -1,3 +1,5 @@
+cmake_minimum_required (VERSION 2.8.11)
+
 project (game CXX)
 
 set (SOURCES
@@ -24,6 +26,10 @@ set (SOURCES
 
 if (NOT WIN32)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter")
+endif ()
+
+if (CMAKE_BUILD_TYPE MATCHES "Release")
+  add_definitions(-DNDEBUG)
 endif ()
 
 add_executable (game ${SOURCES})
