@@ -29,7 +29,7 @@ engine::engine()
     if (window == nullptr)
         throw std::invalid_argument(SDL_GetError());
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (renderer == nullptr) {
         SDL_DestroyWindow(window);
         throw std::invalid_argument(SDL_GetError());
@@ -75,26 +75,19 @@ void engine::tick(double dt)
         }
     }
 
-    SDL_Texture *out = SDL_CreateTexture(renderer, 0,
-            SDL_TEXTUREACCESS_TARGET, screen_width, screen_height);
-    SDL_SetRenderTarget(renderer, out);
     SDL_RenderSetLogicalSize(renderer, screen_width, screen_height);
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    ui.tick(dt);
-    level.tick(dt);
-
     level.draw(renderer);
-
-    SDL_SetRenderTarget(renderer, NULL);
-    SDL_RenderCopy(renderer, out, NULL, NULL);
 
     ui.draw(renderer);
 
+    ui.tick(dt);
+    level.tick(dt);
+
     SDL_RenderPresent(renderer);
-    SDL_DestroyTexture(out);
 }
 
 void engine::start()
