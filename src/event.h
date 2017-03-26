@@ -12,11 +12,13 @@
 namespace event {
 
 enum priorities {
+    HIGHEST     = -300,
     VERY_HIGH   = -200,
     HIGH        = -100,
     NORMAL      = 0,
     LOW         = 100,
     VERY_LOW    = 200,
+    LOWEST      = 200,
 };
 
 struct mouse_event {
@@ -40,6 +42,8 @@ struct mouse_event {
 
 template <typename Ev>
 using handler_fn = std::function<bool(Ev &)>;
+
+struct deregister_handler {};
 
 struct handler {
     handler() {}
@@ -69,6 +73,9 @@ struct handler {
     hndl *ptr;
 };
 
+using task = std::function<void(void)>;
+using timed_task = std::pair<task, double>;
+
 class manager : public tickable {
 public:
     inline manager() : handlers(), last_mouse() {}
@@ -81,11 +88,14 @@ public:
     template<typename Ev>
     void call_handlers(Ev &ev);
 
+    void schedule(task fn, double seconds);
+
     void tick(double dt) override;
 
 private:
     std::unordered_map<std::type_index, std::map<priority, handler>> handlers;
     mouse_event last_mouse;
+    std::deque<timed_task> scheduled;
 };
 
 }

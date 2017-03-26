@@ -12,13 +12,16 @@ void manager::register_handler(handler_fn<Ev> const &f, priority prio) {
 
 template<typename Ev>
 void manager::call_handlers(Ev &ev) {
-    std::cout << "event triggered" << std::endl;
-    for (auto &pair : handlers[typeid(mouse_event)]) {
-        std::cout << pair.first << std::endl;
-        if (pair.second(&ev))
-            break;
+    auto it = handlers[typeid(mouse_event)].begin();
+    while (it != handlers[typeid(mouse_event)].end()) {
+        try {
+            if (it->second(&ev))
+                break;
+            ++it;
+        } catch (struct deregister_handler &d) {
+            it = handlers[typeid(mouse_event)].erase(it);
+        }
     }
-    std::cout << "event handled" << std::endl;
 }
 
 }

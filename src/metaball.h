@@ -11,9 +11,11 @@ struct metaball : public std::complex<double> {
     constexpr metaball(const std::complex<double> &pos, double sz)
         : std::complex<double>(pos)
         , size(sz)
+        , vel(0)
     {}
 
     double size;
+    std::complex<double> vel;
 };
 
 class metaballs {
@@ -32,6 +34,7 @@ public:
         recompute_size();
     }
 
+    void tick(double dt);
     void draw(SDL_Renderer *renderer, SDL_Color &color);
     void add_ball(metaball mb);
     std::vector<metaball> &getballs();
@@ -46,6 +49,7 @@ private:
     double viscosity;
     double threshold;
     double minSz;
+    double fluct;
 };
 
 #endif /* !METABALL_H_ */

@@ -7,9 +7,9 @@
 #include "engine.h"
 
 #define DRAW_THRESH 250
-#define DRAW_STEPS 20
+#define DRAW_STEPS 30
 #define DRAW_LOWER_THRESH 3
-#define CORRECT_LARGE 100000
+#define CORRECT_LARGE 1000000000
 #define STEP_DELTA 0.1
 
 void metaballs::recompute_size()
@@ -93,6 +93,11 @@ struct ballcontext {
     bool done;
 };
 
+void metaballs::tick(double dt)
+{
+    fluct = std::fmod(fluct + dt, std::acos(-1) * 2);
+}
+
 void metaballs::draw(SDL_Renderer *renderer, SDL_Color &color)
 {
     using namespace std::complex_literals;
@@ -112,28 +117,61 @@ void metaballs::draw(SDL_Renderer *renderer, SDL_Color &color)
 #endif
     }
 
+    size_t accum = 0;
+
+    double fluct_angle = 0.1;
+    double fluct_force = 2;
+
     double step = DRAW_STEPS;
+
+    auto draw_ball = [&](auto &bix, auto &ballctx) {
+        std::complex<double> prev = ballctx.edgep;
+        std::complex<double> fromcenter = ballctx.edgep - ballctx.ball;
+        std::complex<double> i = 1.i;
+        prev = (std::abs(fromcenter) - std::cos(fluct + accum * fluct_angle) * fluct_force) * std::exp(i * std::arg(fromcenter));
+        prev += ballctx.ball;
+
+        // rk2: pos + h * f(pos + f(pos) * h / 2)
+        ballctx.edgep += step * tangent(ballctx.edgep + tangent(ballctx.edgep) * step / 2.);
+        correct_edge(ballctx.edgep);
+
+        fromcenter = ballctx.edgep - ballctx.ball;
+        ballctx.edgep = (std::abs(fromcenter) - std::cos(fluct + accum * fluct_angle) * fluct_force) * std::exp(i * std::arg(fromcenter));
+        ballctx.edgep += ballctx.ball;
+        ++accum;
+
+        SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
+#ifndef NDEBUG
+        if (engine::debug) {
+            if (bix % 2 == 0) {
+                SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+            } else {
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            }
+        }
+#endif
+
+        SDL_Point pprev = engine::get().camera.coord_to_pixel(prev);
+        SDL_Point pnext = engine::get().camera.coord_to_pixel(ballctx.edgep);
+        SDL_RenderDrawLine(renderer, pprev.x, pprev.y, pnext.x, pnext.y);
+    };
+
     for (size_t until = 0; until < DRAW_THRESH; ++until) {
+        size_t bix = -1;
         for (auto &ballctx : ctx) {
+            ++bix;
             if (ballctx.done)
                 continue;
-            std::complex<double> prev = ballctx.edgep;
 
-            // rk2: pos + h * f(pos + f(pos) * h / 2)
-            ballctx.edgep += step * tangent(ballctx.edgep + tangent(ballctx.edgep) * step / 2.);
-            correct_edge(ballctx.edgep);
-
-            SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-
-            SDL_Point pprev = engine::get().camera.coord_to_pixel(prev);
-            SDL_Point pnext = engine::get().camera.coord_to_pixel(ballctx.edgep);
-            SDL_RenderDrawLine(renderer, pprev.x, pprev.y, pnext.x, pnext.y);
+            draw_ball(bix, ballctx);
 
             // mark balls done when gone full circle
             for (auto &octx : ctx) {
                 if ((octx.ball != ballctx.ball || until > DRAW_LOWER_THRESH)
                         && std::abs(octx.initp - ballctx.edgep) <= step) {
                     ballctx.done = true;
+                    draw_ball(bix, ballctx);
                 }
             }
         }

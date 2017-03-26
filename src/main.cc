@@ -11,8 +11,9 @@
 #include "engine.h"
 #include "metaball.h"
 #include "textures.h"
+#include "ui-title.h"
 
-class quit {};
+#define SCREEN_TRANSITION_SPEED 1e-10
 
 static engine *singleton;
 
@@ -22,11 +23,17 @@ engine &engine::get() {
 
 engine::engine()
     : framerate(1./60.)
+    , screen_width(800)
+    , screen_height(600)
+    , fullscreen(0)
     , paused(false)
+    , screen(nullptr)
+    , next_screen(nullptr)
+    , screen_transition(0)
 {
     window = SDL_CreateWindow("Game",
             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-            1600, 900, SDL_WINDOW_BORDERLESS | SDL_WINDOW_RESIZABLE);
+            screen_width, screen_height, SDL_WINDOW_BORDERLESS | SDL_WINDOW_RESIZABLE);
     if (window == nullptr)
         throw std::invalid_argument(SDL_GetError());
 
@@ -39,54 +46,28 @@ engine::engine()
 
 engine::~engine()
 {
+    SDL_SetWindowFullscreen(window, 0);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 }
 
 #ifndef NDEBUG
-bool engine::debug = true;
+bool engine::debug = false;
 #endif
 
 void engine::tick(double dt)
 {
-    SDL_Event ev;
-    while (SDL_PollEvent(&ev)) {
-        switch (ev.type) {
-            case SDL_MOUSEWHEEL:
-                if (ev.wheel.y > 0)
-                    camera.zoom *= 1.1;
-                else if (ev.wheel.y < 0)
-                    camera.zoom /= 1.1;
-                break;
-            case SDL_KEYDOWN:
-                if (ev.key.keysym.sym == SDLK_SPACE)
-                    paused = !paused;
-                if (ev.key.keysym.sym == SDLK_ESCAPE)
-                    throw quit();
-                break;
-            case SDL_WINDOWEVENT:
-                if (ev.window.event == SDL_WINDOWEVENT_RESIZED) {
-                    screen_width  = ev.window.data1;
-                    screen_height = ev.window.data2;
-                }
-                break;
-            case SDL_QUIT:
-                throw quit();
-            default: break;
-        }
-    }
-
     SDL_RenderSetLogicalSize(renderer, screen_width, screen_height);
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    level.draw(renderer);
-    ui.draw(renderer);
+    if (screen) {
+        screen->draw(renderer);
+        screen->tick(dt);
+    }
 
-    event_manager.tick(dt);
-    ui.tick(dt);
-    level.tick(dt);
+    camera.tick(dt);
 
     SDL_RenderPresent(renderer);
 }
@@ -95,7 +76,7 @@ void engine::start()
 {
     using namespace std::complex_literals;
 
-    level.init();
+    textures::init();
 
     level.add_group({ 0, 252, 133, 255 });
     level.add_group({ 247, 11, 119, 255 });
@@ -105,24 +86,9 @@ void engine::start()
     level.add_group({ 255, 69, 62, 255 });
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-    camera.zoom = 0.1;
-    textures::init();
-
-    level.add_entity(std::make_shared<entity>((300 + 400i) / camera.zoom));
-    level.add_entity(std::make_shared<entity>((400 + 500i) / camera.zoom));
-    level.add_entity(std::make_shared<entity>((200 + 200i) / camera.zoom));
-    level.add_entity(std::make_shared<entity>((100 + 100i) / camera.zoom));
-    level.add_entity(std::make_shared<entity>((500 + 600i) / camera.zoom));
-    level.add_entity(std::make_shared<entity>((600 + 500i) / camera.zoom));
-
-    for (auto &e : level.pop.entities)
-        level.pop.groups[0].add(e);
-
     SDL_RaiseWindow(window);
 
-    ui.add(std::make_shared<group_picker>());
-    ui.add(std::make_shared<stat_panel>());
+    screen = new screen::title();
 
     Uint64 last  = SDL_GetPerformanceCounter();
 

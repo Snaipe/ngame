@@ -68,17 +68,15 @@ entity::entity(std::complex<double> pos, genome g)
     , ai()
     , mb(2, 0.00004, metaball(pos, 2), metaball(pos, 1.5))
 {
-    for (size_t i = 0; i < (.5e6 * engine::get().framerate) / attr.speed; ++i)
-        lastpos.push(pos);
-
-    ai.push(*this, ai_state::FIND_FOOD);
+    //ai.push(*this, ai_state::FIND_FOOD);
 }
 
 void entity::tick(double dt)
 {
     ai.tick(*this, dt);
+    mb.tick(dt);
 
-    maturity += attr.maturation_speed * dt;
+    //maturity += attr.maturation_speed * dt;
     age += dt;
 
     std::complex<double> p = pos();
@@ -89,12 +87,22 @@ void entity::tick(double dt)
     mb.getballs()[0].real(p.real());
     mb.getballs()[0].imag(p.imag());
 
-    lastpos.push(p);
-
-    p = lastpos.front();
-    mb.getballs()[1].real(p.real());
-    mb.getballs()[1].imag(p.imag());
-    lastpos.pop();
+    for (auto &m : mb.getballs()) {
+        if (m == p)
+            continue;
+        double dist = std::abs(m - p);
+        double DRAG_THRESHOLD = 0;
+        if (dist > DRAG_THRESHOLD) {
+            // TODO: blobby force stuff
+            //std::complex<double> force = (p - m) * 100.;
+            //std::cout << force << std::endl;
+            //m.vel += force * dt;
+            m.vel = (p - m) * 5.;
+            std::complex<double> mp = m + m.vel * dt;
+            m.real(mp.real());
+            m.imag(mp.imag());
+        }
+    }
 }
 
 std::complex<double> entity::pos()
@@ -104,7 +112,11 @@ std::complex<double> entity::pos()
 
 void entity::draw(SDL_Renderer *renderer)
 {
-    color.a = std::round(255 * (attr.max_age - age) / attr.max_age);
+    if (age > 0) {
+        color.a = std::round(255 * (attr.max_age - age) / attr.max_age);
+    } else {
+        color.a = 255;
+    }
     mb.draw(renderer, color);
 }
 

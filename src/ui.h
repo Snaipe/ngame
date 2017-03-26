@@ -8,6 +8,8 @@
 #include "event.h"
 #include "tickable.h"
 
+namespace ui {
+
 class ui_element
     : public drawable
     , public tickable
@@ -15,15 +17,15 @@ class ui_element
 {
 public:
     ui_element(int x, int y, int w, int h);
+    inline virtual ~ui_element() {}
     void tick(double dt) override;
     void draw(SDL_Renderer *renderer) override;
-    void add(std::shared_ptr<ui_element> &&elt);
-    void add(std::shared_ptr<ui_element> &elt);
+    void add(ui_element *elt);
     virtual void close();
-    std::shared_ptr<ui_element> parent;
+    ui_element* parent;
 
 private:
-    std::vector<std::shared_ptr<ui_element>> elements;
+    std::vector<ui_element *> elements;
 };
 
 class ui : public ui_element {
@@ -39,7 +41,6 @@ public:
     group_picker();
     void draw(SDL_Renderer *renderer) override;
 
-private:
     static bool handle_mouse(event::mouse_event &ev);
 };
 
@@ -60,5 +61,7 @@ public:
 private:
     double transvelocity;
 };
+
+}
 
 #endif /* !UI_H_ */

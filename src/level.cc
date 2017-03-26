@@ -8,7 +8,7 @@
 #include "level.h"
 
 #define SELECT_THRESHOLD 10
-#define PICK_THRESHOLD 30
+#define PICK_THRESHOLD 300
 
 bgelement::bgelement(SDL_Texture *tex_, std::complex<double> pos_)
     : pos(pos_)
@@ -52,13 +52,6 @@ void level::draw(SDL_Renderer *renderer)
     }
 }
 
-void level::init() {
-    using namespace event;
-
-    auto &em = engine::get().event_manager;
-    em.register_handler<mouse_event>([this](auto &ev) { return this->handle_mouse(ev); }, priorities::NORMAL);
-}
-
 bool level::handle_mouse(event::mouse_event &ev)
 {
     if (ev.left_pressed()) {
@@ -89,9 +82,9 @@ bool level::handle_mouse(event::mouse_event &ev)
             }
         } else {
             for (auto &e : pop.entities) {
-                SDL_Point p = engine::get().camera.coord_to_pixel(e->pos());
-                if (std::pow(p.x - ev.position.x, 2) + std::pow(p.y - ev.position.y, 2)
-                        < PICK_THRESHOLD * PICK_THRESHOLD) {
+                std::complex<double> mouse = engine::get().camera.pixel_to_coord(ev.position);
+                double norm = std::norm(e->pos() - mouse);
+                if (norm < PICK_THRESHOLD * PICK_THRESHOLD) {
                     select(e);
                 }
             }
@@ -112,6 +105,9 @@ bool level::handle_mouse(event::mouse_event &ev)
     if (ev.right_released()) {
         create_area.w = ev.position.x - create_area.x;
         create_area.h = ev.position.y - create_area.y;
+        if (std::abs(create_area.w * create_area.h) <= SELECT_THRESHOLD) {
+            create_area.x = create_area.y = create_area.w = create_area.h = -1;
+        }
         return true;
     }
 

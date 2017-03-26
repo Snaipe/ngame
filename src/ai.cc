@@ -118,12 +118,19 @@ void find_food::tick(entity &target, double dt)
     std::random_device rand;
     std::mt19937 mt(rand());
 
-    std::complex<double> max = engine::get().camera.pixel_to_coord({engine::get().screen_width, engine::get().screen_height});
+    auto &e = engine::get();
 
-    std::uniform_real_distribution<double> distx(0, max.real());
-    std::uniform_real_distribution<double> disty(0, max.imag());
+    std::complex<double> sd = e.camera.pixel_to_coord({e.screen_width, e.screen_height});
+
+    std::complex<double> min = e.camera.pos() - sd / 2.;
+    std::complex<double> max = e.camera.pos() + sd / 2.;
+
+    std::uniform_real_distribution<double> distx(min.real(), max.real());
+    std::uniform_real_distribution<double> disty(min.imag(), max.imag());
 
     target.goal = std::complex<double>(distx(mt), disty(mt));
+
+    std::cout << "going to " << target.goal << std::endl;
 
     target.ai.push(target, ai_state::GOTO);
 }

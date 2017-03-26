@@ -29,7 +29,6 @@ class level
 public:
     level();
 
-    void init();
     void draw(SDL_Renderer *renderer) override;
     void tick(double dt) override;
     void add_entity(const std::shared_ptr<entity> &e);

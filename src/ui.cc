@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <iostream>
@@ -15,6 +16,8 @@
 #define STAT_COL_WIDTH 80
 #define STAT_PANEL (2 * STAT_COL_WIDTH + 3 * STAT_MARGIN)
 #define STAT_PANEL_VELOCITY_THRESH 30
+
+namespace ui {
 
 ui_element::ui_element(int x, int y, int w, int h)
     : SDL_Rect({x, y, w, h})
@@ -34,19 +37,22 @@ void ui_element::draw(SDL_Renderer *renderer)
         d->draw(renderer);
 }
 
-void ui_element::add(std::shared_ptr<ui_element> &&elt)
+void ui_element::add(ui_element *elt)
 {
-    elements.push_back(elt);
-}
-
-void ui_element::add(std::shared_ptr<ui_element> &elt)
-{
+    elt->parent = this;
     elements.push_back(elt);
 }
 
 void ui_element::close()
 {
-    elements.clear();
+    if (parent) {
+        auto it = std::find(parent->elements.begin(), parent->elements.end(), this);
+        if (it != parent->elements.end()) {
+            parent->elements.erase(it);
+        }
+    }
+    for (auto &e : elements)
+        e->close();
 }
 
 ui::ui()
@@ -180,10 +186,6 @@ void colorpick::draw(SDL_Renderer *renderer)
 group_picker::group_picker()
     : ui_element(0, 0, 0, 0)
 {
-    using namespace event;
-
-    auto &em = engine::get().event_manager;
-    em.register_handler<mouse_event>(handle_mouse, priorities::HIGH);
 }
 
 static void group_picker_boundaries(int offset, SDL_Point &a, SDL_Point &b)
@@ -251,7 +253,7 @@ void group_picker::draw(SDL_Renderer *renderer)
 }
 
 stat_panel::stat_panel()
-    : ui_element(0, 0, STAT_PANEL, 0)
+    : ui_element(-1, 0, STAT_PANEL, 0)
 {}
 
 void stat_panel::tick(double dt)
@@ -341,4 +343,6 @@ void stat_panel::draw(SDL_Renderer *renderer)
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderDrawLine(renderer, panel_x, 0, panel_x, engine.screen_height);
+}
+
 }

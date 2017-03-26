@@ -4,7 +4,10 @@
 #include "camera.h"
 #include "event.h"
 #include "level.h"
+#include "screens.h"
 #include "ui.h"
+
+class quit {};
 
 struct engine {
     engine();
@@ -15,12 +18,14 @@ struct engine {
     double framerate;
     int screen_width;
     int screen_height;
+    int fullscreen;
     bool paused;
 
-    class level level;
     class camera camera;
-    class ui ui;
-    class event::manager event_manager;
+    class level level;
+    screen::screen *screen;
+    screen::screen *next_screen;
+    double screen_transition;
 
     SDL_Window *window;
     SDL_Renderer *renderer;
@@ -32,8 +37,6 @@ struct engine {
 private:
     void tick(double dt);
     void start();
-
-    SDL_Texture *draw_target;
 
     friend int main(int, char **);
 };
